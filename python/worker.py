@@ -11,7 +11,7 @@ from .request import make_request_from_str, verify_request_format, RequestItem
 from .message import MessageItem, make_message_from_str, REQUEST, REFUSE, RELEASE, GRAND
 
 
-MAX_WORK_TIME = 20  # seconds
+MAX_WORK_TIME = 1000  # seconds
 
 
 class WorkerContext(object):
@@ -27,10 +27,15 @@ class WorkerContext(object):
         self.lamport_timestamp = 0
         self.acks = []
         if self.self_id is None:
-            self.fout = open(os.devnull, "a")
+            self.fout = open(os.devnull, "w")
             # self.fout = open("tmp.log", "a")
         else:
-            self.fout = open(f"debug_{self.self_id}.log", "a")
+            self.fout = open(f"debug_{self.self_id}.log", "w")
+        
+        if self.self_id is None:
+            self.log_out = open(os.devnull, "w")
+        else:
+            self.log_out = open(f"log_{self.self_id}.log", "w")
 
     def __del__(self):
         self.fout.close()
@@ -62,10 +67,15 @@ class WorkerContext(object):
         self.acks = d["acks"]
 
         if self.self_id is None:
-            self.fout = open(os.devnull, "a")
+            self.fout = open(os.devnull, "w")
             # self.fout = open("tmp.log", "a")
         else:
-            self.fout = open(f"debug_{self.self_id}.log", "a")
+            self.fout = open(f"debug_{self.self_id}.log", "w")
+        
+        if self.self_id is None:
+            self.log_out = open(os.devnull, "w")
+        else:
+            self.log_out = open(f"log_{self.self_id}.log", "w")
 
     def to_jsons(self):
         return json.dumps(self.to_dict())
@@ -75,7 +85,7 @@ class WorkerContext(object):
 
     def write_log(self, log):
         verify_log_format(log)
-        print(self.self_id, str(log), file=self.fout, flush=True)
+        print(self.self_id, str(log), file=self.log_out, flush=True)
         self.log.append(log)
 
     def enque_request(self, request):
@@ -124,7 +134,7 @@ def make_worker_ctx_from_str(s):
 
 
 def random_rest():
-    randsec = random.randint(0, 1)
+    randsec = random.randint(0, 5)
     time.sleep(randsec)
 
 
@@ -179,7 +189,7 @@ def lamport_worker(ctx_str):
         print("Try to send request", flush=True, file=ctx.fout)
         want_critical_section = random.random()
         if (
-            want_critical_section > 0.0
+            want_critical_section > 0.7
             and not ctx.requesting_critical_section
             and not ctx.in_critical_section
             and ctx.compete_trials < ctx.max_compete_trials
