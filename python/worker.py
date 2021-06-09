@@ -293,7 +293,7 @@ def lamport_worker(ctx_str):
                     clis[i].send(header)
                     clis[i].send(vmsg)
                     # cli.close()
-                    ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, SEND, i, RELEASE))
+                    ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, SEND, i, RELEASE, str(ctx.current_request().timestamp)))
                 
                 ctx.deque_top_request()
                 ctx.clear_acks()
