@@ -30,15 +30,18 @@ class WorkerContext(object):
             self.fout = open(os.devnull, "w")
             # self.fout = open("tmp.log", "a")
         else:
-            self.fout = open(f"debug_{self.self_id}.log", "w")
+            os.makedirs(".debug", exist_ok=True)
+            self.fout = open(f".debug/debug_{self.self_id}.log", "w")
         
         if self.self_id is None:
             self.log_out = open(os.devnull, "w")
         else:
-            self.log_out = open(f"log_{self.self_id}.log", "w")
+            os.makedirs(".display", exist_ok=True)
+            self.log_out = open(f".display/process_{self.self_id}.log", "w")
 
     def __del__(self):
         self.fout.close()
+        self.log_out.close()
 
     def to_dict(self):
         return {
@@ -70,12 +73,14 @@ class WorkerContext(object):
             self.fout = open(os.devnull, "w")
             # self.fout = open("tmp.log", "a")
         else:
-            self.fout = open(f"debug_{self.self_id}.log", "w")
+            os.makedirs(".debug", exist_ok=True)
+            self.fout = open(f".debug/debug_{self.self_id}.log", "w")
         
         if self.self_id is None:
             self.log_out = open(os.devnull, "w")
         else:
-            self.log_out = open(f"log_{self.self_id}.log", "w")
+            os.makedirs(".display", exist_ok=True)
+            self.log_out = open(f".display/process_{self.self_id}.log", "w")
 
     def to_jsons(self):
         return json.dumps(self.to_dict())
@@ -85,7 +90,7 @@ class WorkerContext(object):
 
     def write_log(self, log):
         verify_log_format(log)
-        print(self.self_id, str(log), file=self.log_out, flush=True)
+        print(str(log), file=self.log_out, flush=True)
         self.log.append(log)
 
     def enque_request(self, request):
@@ -221,7 +226,7 @@ def lamport_worker(ctx_str):
                 clis[i].send(header)
                 clis[i].send(msg)
                 # cli.close()
-                ctx.write_log(LogItem(ctx.lamport_timestamp, SEND, i, REQUEST))      
+                ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, SEND, i, REQUEST, str(request_timestamp)))      
 
         random_rest()
 
@@ -240,7 +245,7 @@ def lamport_worker(ctx_str):
                 print("Get ", msg_str, flush=True, file=ctx.fout)
                 msg = make_message_from_str(msg_str)
                 ctx.update_timestamp(msg.timestamp)
-                ctx.write_log(LogItem(ctx.lamport_timestamp, RECEIVE, msg.vpid, msg.info))
+                ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, RECEIVE, msg.vpid, msg.info, msg.other))
 
                 # handle the msg
                 # send to others if necessary
@@ -256,7 +261,7 @@ def lamport_worker(ctx_str):
                     header = struct.pack("i", length)
                     clis[msg.vpid].send(header)
                     clis[msg.vpid].send(vmsg)
-                    ctx.write_log(LogItem(ctx.lamport_timestamp, SEND, msg.vpid, GRAND))
+                    ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, SEND, msg.vpid, GRAND, str(request_timestamp)))
                 elif msg.info == GRAND:
                     ctx.add_ack(msg.vpid)
                 elif msg.info == REFUSE:
@@ -282,13 +287,13 @@ def lamport_worker(ctx_str):
                         continue
                     ctx.inc_timestamp()
                     # cli.connect((addr, port))
-                    vmsg = str(MessageItem(ctx.lamport_timestamp, ctx.self_id, RELEASE)).encode()
+                    vmsg = str(MessageItem(ctx.lamport_timestamp, ctx.self_id, RELEASE, str(ctx.current_request().timestamp))).encode()
                     length = len(vmsg)
                     header = struct.pack("i", length)
                     clis[i].send(header)
                     clis[i].send(vmsg)
                     # cli.close()
-                    ctx.write_log(LogItem(ctx.lamport_timestamp, SEND, i, RELEASE))
+                    ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, SEND, i, RELEASE))
                 
                 ctx.deque_top_request()
                 ctx.clear_acks()
