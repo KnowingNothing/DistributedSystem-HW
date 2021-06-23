@@ -212,7 +212,7 @@ def lamport_worker(ctx_str):
             ctx.clear_acks()
 
             # send to others
-            for i, (addr, port) in enumerate(ctx.total_addr_info):
+            """for i, (addr, port) in enumerate(ctx.total_addr_info):
                 print(i, addr, port, flush=True, file=ctx.fout)
                 if i == ctx.self_id:
                     continue
@@ -226,7 +226,20 @@ def lamport_worker(ctx_str):
                 clis[i].send(header)
                 clis[i].send(msg)
                 # cli.close()
-                ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, SEND, i, REQUEST, str(request_timestamp)))      
+                ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, SEND, i, REQUEST, str(request_timestamp)))""" 
+            ctx.inc_timestamp()
+            for i, (addr, port) in enumerate(ctx.total_addr_info):
+                print(i, addr, port, flush=True, file=ctx.fout)
+                if i == ctx.self.id:
+                    continue
+                print(ctx.self_id, addr, port, type(addr), type(port), flush=True, file=ctx.fout)
+                print("OK", flush=True, file=ctx.fout)
+                msg = str(MessageItem(ctx.lamport_timestamp, ctx.self_id, REQUEST, str(request_timestamp))).encode()
+                length = len(msg)
+                header = struct.pack("i", length)
+                clis[i].send(header)
+                clis[i].send(msg)
+            ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, SEND, i, REQUEST, str(request_timestamp)))
 
         random_rest()
 
