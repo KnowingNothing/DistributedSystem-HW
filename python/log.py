@@ -18,7 +18,8 @@ def beautify_log(log):
         if log.info == GRAND:
             s = f"{log.timestamp} reply {log.self_id} to <{log.other}, {log.vpid}>"
         elif log.info == REQUEST:
-            s = f"{log.timestamp} request <{log.other}, {log.self_id}> from {log.vpid}"
+            #s = f"{log.timestamp} request <{log.other}, {log.self_id}> from {log.vpid}"
+            s = f"{log.timestamp} request <{log.timestamp}, {log.self_id}>"
         elif log.info == RELEASE:
             s = f"{log.timestamp} release <{log.other}, {log.self_id}> in {log.vpid}"
         elif log.info == REFUSE:
