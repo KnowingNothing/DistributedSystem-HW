@@ -21,7 +21,8 @@ def beautify_log(log):
             #s = f"{log.timestamp} request <{log.other}, {log.self_id}> from {log.vpid}"
             s = f"{log.timestamp} request <{log.timestamp}, {log.self_id}>"
         elif log.info == RELEASE:
-            s = f"{log.timestamp} release <{log.other}, {log.self_id}> in {log.vpid}"
+            #s = f"{log.timestamp} release <{log.other}, {log.self_id}> in {log.vpid}"
+            s = f"{log.timestamp} release <{log.other}, {log.self_id}>"
         elif log.info == REFUSE:
             raise NotImplementedError()
         else:

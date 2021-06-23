@@ -207,6 +207,7 @@ def lamport_worker(ctx_str):
         
         print("Whether to send request:", need_critical_section, flush=True, file=ctx.fout)
         if need_critical_section:
+            ctx.inc_timestamp()
             request_timestamp = ctx.lamport_timestamp
             ctx.enque_request(RequestItem(ctx.lamport_timestamp, ctx.self_id))
             ctx.clear_acks()
@@ -227,10 +228,10 @@ def lamport_worker(ctx_str):
                 clis[i].send(msg)
                 # cli.close()
                 ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, SEND, i, REQUEST, str(request_timestamp)))""" 
-            ctx.inc_timestamp()
+            #ctx.inc_timestamp()
             for i, (addr, port) in enumerate(ctx.total_addr_info):
                 print(i, addr, port, flush=True, file=ctx.fout)
-                if i == ctx.self.id:
+                if i == ctx.self_id:
                     continue
                 print(ctx.self_id, addr, port, type(addr), type(port), flush=True, file=ctx.fout)
                 print("OK", flush=True, file=ctx.fout)
@@ -295,7 +296,7 @@ def lamport_worker(ctx_str):
 
                 ctx.exit_critical_section()
 
-                for i, (addr, port) in enumerate(ctx.total_addr_info):
+                """for i, (addr, port) in enumerate(ctx.total_addr_info):
                     if i == ctx.self_id:
                         continue
                     ctx.inc_timestamp()
@@ -306,7 +307,18 @@ def lamport_worker(ctx_str):
                     clis[i].send(header)
                     clis[i].send(vmsg)
                     # cli.close()
-                    ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, SEND, i, RELEASE, str(ctx.current_request().timestamp)))
+                    ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, SEND, i, RELEASE, str(ctx.current_request().timestamp)))"""
+
+                ctx.inc_timestamp()
+                for i, (addr, port) in enumerate(ctx.total_addr_info):
+                    if i == ctx.self_id:
+                        continue
+                    vmsg = str(MessageItem(ctx.lamport_timestamp, ctx.self_id, RELEASE, str(ctx.current_request().timestamp))).encode()
+                    length = len(vmsg)
+                    header = struct.pack("i", length)
+                    clis[i].send(header)
+                    clis[i].send(vmsg)
+                ctx.write_log(LogItem(ctx.self_id, ctx.lamport_timestamp, SEND, i, RELEASE, str(ctx.current_request().timestamp)))
                 
                 ctx.deque_top_request()
                 ctx.clear_acks()
